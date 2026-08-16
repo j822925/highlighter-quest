@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🖍️ 螢光筆尋寶遊戲</title>
+    <title>🖍️ 螢光筆與剪刀小工具</title>
     <style>
         body { 
             font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; 
@@ -20,15 +20,24 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         h2 { text-align: center; color: #2c3e50; }
-        textarea { 
+        textarea, #editableContent { 
             width: 100%; 
             height: 200px; 
-            font-size: 16px; 
+            font-size: 18px; 
             padding: 12px; 
             box-sizing: border-box; 
             border: 2px solid #ddd;
             border-radius: 8px;
-            line-height: 1.5;
+            line-height: 1.8;
+            background-color: #fff;
+        }
+        #editableContent {
+            overflow-y: auto;
+            min-height: 250px;
+        }
+        #editableContent:focus {
+            outline: 2px solid #3498db;
+            border-color: #3498db;
         }
         button { 
             width: 100%; 
@@ -43,19 +52,17 @@
             cursor: pointer; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
+        button.secondary { background-color: #3498db; }
+        button.outline { background-color: #95a5a6; }
         button:active { transform: scale(0.98); }
-        #readMode { display: none; }
-        #textContent {
-            font-size: 18px; 
-            line-height: 2.2; 
-        }
+        #readMode, #modifyMode { display: none; }
+        #textContent { font-size: 18px; line-height: 2.2; }
         .sentence { 
             cursor: pointer; 
             padding: 4px 2px; 
             border-radius: 6px; 
             transition: background-color 0.2s; 
         }
-        /* 點擊後的螢光筆效果 */
         .highlight { 
             background-color: #ffeb3b; 
             font-weight: bold; 
@@ -63,29 +70,40 @@
         }
         .instruction {
             color: #7f8c8d;
-            font-size: 14px;
+            font-size: 15px;
             text-align: center;
             margin-bottom: 15px;
+            line-height: 1.4;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🖍️ 螢光筆尋寶遊戲</h2>
+    <h2>🖍️ 螢光筆與剪刀小工具</h2>
     
-    <!-- 編輯模式：貼上文章的地方 -->
+    <!-- 步驟一：貼上文章 -->
     <div id="editMode">
-        <p class="instruction">請把要修改的文章段落貼在下方，然後點擊「開始尋寶」！</p>
+        <p class="instruction">步驟一：請把要修改的文章貼在下方，然後點擊「開始尋寶」！</p>
         <textarea id="inputText" placeholder="在這裡貼上文章..."></textarea>
-        <button onclick="startHighlighting()">✨ 開始尋寶 ✨</button>
+        <button onclick="startHighlighting()">✨ 步驟二：開始尋寶 ✨</button>
     </div>
 
-    <!-- 閱讀與畫重點模式 -->
+    <!-- 步驟二：畫重點 -->
     <div id="readMode">
-        <p class="instruction">👆 點擊妳覺得寫得最棒的句子，幫它塗上螢光筆（再點一次可以取消）。</p>
+        <p class="instruction">👆 點擊妳覺得寫得最棒的句子，幫它塗上螢光筆（再點一次可取消）。</p>
         <div id="textContent"></div>
-        <button onclick="reset()" style="background-color: #95a5a6;">🔙 重新貼上文章</button>
+        <button class="secondary" onclick="goToModifyMode()">✂️ 步驟三：進入刪改模式</button>
+        <button class="outline" onclick="reset()">🔙 放棄重來</button>
+    </div>
+
+    <!-- 步驟三：刪除與打字修改 -->
+    <div id="modifyMode">
+        <p class="instruction">⌨️ 現在游標可以點進去囉！<br>請把沒畫螢光筆的冗詞贅字刪除，或打字補上連接詞。</p>
+        <!-- 這個區塊可以讓手機叫出小鍵盤進行打字編輯 -->
+        <div id="editableContent" contenteditable="true"></div>
+        <button onclick="finishEditing()">✅ 完成修改 (自動複製)</button>
+        <button class="outline" onclick="backToHighlight()">🔙 回到畫重點</button>
     </div>
 </div>
 
@@ -97,7 +115,6 @@
             return;
         }
 
-        // 利用標點符號切分句子，讓手指容易點擊
         const segments = text.split(/([，。！？,\.!\?]+)/);
         const container = document.getElementById('textContent');
         container.innerHTML = '';
@@ -118,6 +135,7 @@
         }
 
         document.getElementById('editMode').style.display = 'none';
+        document.getElementById('modifyMode').style.display = 'none';
         document.getElementById('readMode').style.display = 'block';
     }
 
@@ -126,16 +144,50 @@
         const span = document.createElement('span');
         span.className = 'sentence';
         span.innerText = text;
-        // 手機點擊切換螢光筆 class
         span.onclick = function() { 
             this.classList.toggle('highlight'); 
         };
         container.appendChild(span);
     }
 
+    function goToModifyMode() {
+        // 將畫好重點的內容複製到可編輯區塊
+        const content = document.getElementById('textContent').innerHTML;
+        const editableDiv = document.getElementById('editableContent');
+        editableDiv.innerHTML = content;
+        
+        // 移除編輯模式中 span 的點擊變色功能，避免打字時誤觸
+        const spans = editableDiv.getElementsByTagName('span');
+        for(let i = 0; i < spans.length; i++) {
+            spans[i].onclick = null;
+            spans[i].style.cursor = 'text';
+        }
+
+        document.getElementById('readMode').style.display = 'none';
+        document.getElementById('modifyMode').style.display = 'block';
+    }
+
+    function backToHighlight() {
+        document.getElementById('modifyMode').style.display = 'none';
+        document.getElementById('readMode').style.display = 'block';
+    }
+
+    function finishEditing() {
+        // 取得最後編輯完成的純文字
+        const textContent = document.getElementById('editableContent').innerText;
+        
+        // 嘗試自動複製到手機剪貼簿
+        navigator.clipboard.writeText(textContent).then(() => {
+            alert('🎉 修改後的文章已經自動複製囉！可以直接貼回記事本。');
+        }).catch(err => {
+            alert('修改完成！請長按螢幕手動全選並複製文章。');
+        });
+    }
+
     function reset() {
         document.getElementById('editMode').style.display = 'block';
         document.getElementById('readMode').style.display = 'none';
+        document.getElementById('modifyMode').style.display = 'none';
     }
 </script>
 
