@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🖍️ 螢光筆尋寶遊戲</title>
+    <style>
+        body { 
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; 
+            padding: 20px; 
+            background-color: #f0f8ff; 
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h2 { text-align: center; color: #2c3e50; }
+        textarea { 
+            width: 100%; 
+            height: 200px; 
+            font-size: 16px; 
+            padding: 12px; 
+            box-sizing: border-box; 
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+        button { 
+            width: 100%; 
+            padding: 15px; 
+            font-size: 18px; 
+            font-weight: bold;
+            background-color: #ff9800; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            margin-top: 15px; 
+            cursor: pointer; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        button:active { transform: scale(0.98); }
+        #readMode { display: none; }
+        #textContent {
+            font-size: 18px; 
+            line-height: 2.2; 
+        }
+        .sentence { 
+            cursor: pointer; 
+            padding: 4px 2px; 
+            border-radius: 6px; 
+            transition: background-color 0.2s; 
+        }
+        /* 點擊後的螢光筆效果 */
+        .highlight { 
+            background-color: #ffeb3b; 
+            font-weight: bold; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .instruction {
+            color: #7f8c8d;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🖍️ 螢光筆尋寶遊戲</h2>
+    
+    <!-- 編輯模式：貼上文章的地方 -->
+    <div id="editMode">
+        <p class="instruction">請把要修改的文章段落貼在下方，然後點擊「開始尋寶」！</p>
+        <textarea id="inputText" placeholder="在這裡貼上文章..."></textarea>
+        <button onclick="startHighlighting()">✨ 開始尋寶 ✨</button>
+    </div>
+
+    <!-- 閱讀與畫重點模式 -->
+    <div id="readMode">
+        <p class="instruction">👆 點擊妳覺得寫得最棒的句子，幫它塗上螢光筆（再點一次可以取消）。</p>
+        <div id="textContent"></div>
+        <button onclick="reset()" style="background-color: #95a5a6;">🔙 重新貼上文章</button>
+    </div>
+</div>
+
+<script>
+    function startHighlighting() {
+        const text = document.getElementById('inputText').value;
+        if (!text.trim()) {
+            alert('要先貼上文章才能尋寶喔！');
+            return;
+        }
+
+        // 利用標點符號切分句子，讓手指容易點擊
+        const segments = text.split(/([，。！？,\.!\?]+)/);
+        const container = document.getElementById('textContent');
+        container.innerHTML = '';
+
+        let currentSentence = '';
+        segments.forEach(segment => {
+            if (/^[，。！？,\.!\?]+$/.test(segment)) {
+                currentSentence += segment;
+                createSpan(currentSentence, container);
+                currentSentence = '';
+            } else {
+                currentSentence += segment;
+            }
+        });
+        
+        if (currentSentence) {
+            createSpan(currentSentence, container);
+        }
+
+        document.getElementById('editMode').style.display = 'none';
+        document.getElementById('readMode').style.display = 'block';
+    }
+
+    function createSpan(text, container) {
+        if (!text.trim()) return;
+        const span = document.createElement('span');
+        span.className = 'sentence';
+        span.innerText = text;
+        // 手機點擊切換螢光筆 class
+        span.onclick = function() { 
+            this.classList.toggle('highlight'); 
+        };
+        container.appendChild(span);
+    }
+
+    function reset() {
+        document.getElementById('editMode').style.display = 'block';
+        document.getElementById('readMode').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
